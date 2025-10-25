@@ -2,41 +2,55 @@ let choiceContainers = $('.choice-container');
 let choiceTexts = $('.choice-text');
 
 
-let questions = [
-  {
-    question: 'Question 1',
-    answerChoices: ['answer 1', 'answer 2', 'answer 3', 'answer 4'],
-    answerIndex: 1,
-  },
-  {
-    question: 'Question 2',
-    answerChoices: ['True', 'False'],
-    answerIndex: 0,
-  },
-  {
-    question: 'Question 3',
-    answerChoices: ['answer 1', 'answer 2', 'answer 3', 'answer 4'],
-    answerIndex: 3,
-  }
-];
-
+let questions = [];
+let currentQuestion = {};
 let questionCounter = -1;
 let acceptingAnswers = false;
+
+$.ajax({
+  method: 'GET',
+  url: 'https://opentdb.com/api.php?amount=3',
+  dataType: "json"
+})
+.done(function(response) {
+  for (let loadedQuestion of response.results) {
+    let formattedQuestion = {
+      'question': $.parseHTML(loadedQuestion.question)[0].textContent
+    };
+    let answerChoices = [];
+    for (let incorrectAnswer of loadedQuestion.incorrect_answers) {
+      let parsedIncorrectAnswer = $.parseHTML(incorrectAnswer)[0].textContent;
+      answerChoices.push(parsedIncorrectAnswer);
+    }
+    formattedQuestion.answerIndex = Math.floor(Math.random() * answerChoices.length);
+    let parsedCorrectAnswer = $.parseHTML(loadedQuestion.correct_answer)[0].textContent;
+    answerChoices.splice(formattedQuestion.answerIndex, 0, parsedCorrectAnswer);
+    formattedQuestion.answerChoices = answerChoices;
+    questions.push(formattedQuestion);
+  }
+  getNewQuestion();
+})
+.fail(function(err) {
+  console.error(err);
+});
 
 
 for (let choice of choiceTexts) {
   $(choice).click(function(event) {
     if (!acceptingAnswers) return;
     acceptingAnswers = false;
-    let selectedAnswerIndex = $(event.target).attr("id");
-    console.log(selectedAnswerIndex);
-    getNewQuestion();
-
+     let selectedChoice = event.target;
+    let selectedAnswerIndex = $(selectedChoice).attr("id");
+    let classToApply = currentQuestion.answerIndex == selectedAnswerIndex ? "correct" : "incorrect";
+    $(selectedChoice.parentElement).addClass(classToApply);
+    setTimeout(function() {
+      $(selectedChoice.parentElement).removeClass(classToApply);
+      getNewQuestion();
+    }, 1000);
   });
 }
 
 
-getNewQuestion();
 
 
 function getNewQuestion() {
@@ -44,9 +58,8 @@ function getNewQuestion() {
   if (questionCounter >= questions.length) {
     return window.location.assign('menu.html');
   }
-  let currentQuestion = questions[questionCounter];
+  currentQuestion = questions[questionCounter];
   $('#question').text(currentQuestion.question);
-  $('#question').text(currentQuestion.question)
   for (let index = 0; index < choiceContainers.length; index++) {
     if (index < currentQuestion.answerChoices.length) {
       choiceContainers.eq(index).find(".choice-text").text(currentQuestion.answerChoices[index]);
@@ -56,7 +69,6 @@ function getNewQuestion() {
     }
   }
   acceptingAnswers = true;
-
 }
 
 
