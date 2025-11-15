@@ -4,6 +4,8 @@ const progressText = $("#progressText");
 const progressBarFull = $("#progressBarFull");
 const scoreText = $("#score");
 const scoreBonus = 10;
+const game=$("#game");
+const loader=$("#loader");
 
 
 
@@ -34,6 +36,8 @@ $.ajax({
     formattedQuestion.answerChoices = answerChoices;
     questions.push(formattedQuestion);
   }
+  game.removeClass('hidden');
+  loader.addClass('hidden');
   getNewQuestion();
 })
 .fail(function(err) {
